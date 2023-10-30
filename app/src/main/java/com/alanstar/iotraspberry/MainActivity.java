@@ -21,6 +21,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import com.alanstar.iotraspberry.exceptions.NotSupportedIPTypeException;
 import com.alanstar.iotraspberry.utils.NetworkScanner;
 import com.didichuxing.doraemonkit.DoKit;
 import com.hjq.permissions.OnPermissionCallback;
@@ -35,6 +36,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Button btn_request;
     TextView tv_devices;
 
+    int clickFlag = 0;
     public static final String TAG = "MainActivity";
     public static final int PERMISSION_REQUEST_CODE = 101;
 
@@ -144,37 +146,43 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
             // 有权限则尝试获取列表
             else {
-//                Thread devicesGetter = new Thread(() -> {
-//                    // 用 Runnable 在新线程上执行 net IO 操作
-//                    WLANDevicesScan devicesScan = new WLANDevicesScan(this);
-//                    StringBuilder builder = new StringBuilder();
-//                    List<ScanResult> devicesList = devicesScan.getNetworkDevices();
-//
-//                    // 拼接
-//                    for (ScanResult device : devicesList) {
-//                        builder.append(device.SSID).append(" ").append(device.BSSID).append(" ").append(device.level).append(" ").append("\n");
-//                    }
-//                    // 填充到 TextView (转到 UI 线程)
-//                    runOnUiThread(() -> tv_devices.setText(builder.toString()));
-//                });
-//                devicesGetter.start();
+                if (clickFlag != 1) {
+                    Thread lanInfoGetter = new Thread(() -> {
+                        // 用 Runnable 在新线程上执行 net IO 操作
+                        WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+                        NetworkScanner scanner = new NetworkScanner(wifiManager);
+                        String builder = "IP 地址: " + scanner.getIpAddress() + "\n" +
+                                "子网掩码: " + scanner.getNetMask() + "\n" +
+                                "网关地址: " + scanner.getGateway() + "\n" +
+                                "服务器地址: " + scanner.getServerAddress() + "\n" +
+                                "首选 DNS 地址: " + scanner.getFirstDNS() + "\n" +
+                                "备用 DNS 地址: " + scanner.getSecondDNS() + "\n";
+                        Log.d(TAG, builder);
 
-                Thread lanInfoGetter = new Thread(() -> {
-                    // 用 Runnable 在新线程上执行 net IO 操作
-                    WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-                    NetworkScanner scanner = new NetworkScanner(wifiManager);
-                    String builder = "IP 地址: " + scanner.getIpAddress() + "\n" +
-                            "子网掩码: " + scanner.getNetMask() + "\n" +
-                            "网关地址: " + scanner.getGateway() + "\n" +
-                            "服务器地址: " + scanner.getServerAddress() + "\n" +
-                            "首选 DNS 地址: " + scanner.getFirstDNS() + "\n" +
-                            "备用 DNS 地址: " + scanner.getSecondDNS() + "\n";
-                    Log.d(TAG, builder);
+                        clickFlag = 1;
 
-                    // 填充到 TextView (转到 UI 线程)
-                    runOnUiThread(() -> tv_devices.setText(builder));
-                });
-                lanInfoGetter.start();
+                        // 填充到 TextView (转到 UI 线程)
+                        runOnUiThread(() -> tv_devices.setText(builder));
+                    });
+                    lanInfoGetter.start();
+                }
+                else {
+                    Thread lanDevicesScanner = new Thread(() -> {
+                        WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+                        NetworkScanner scanner = new NetworkScanner(wifiManager);
+                        try {
+                            runOnUiThread(() -> Toast.makeText(getApplicationContext(), "正在扫描网络中...", Toast.LENGTH_SHORT).show());
+                            String builder = "可用 IP 地址: " + scanner.scanLANReachable(scanner.getIpAddress());
+                            Log.d(TAG, builder);
+                            clickFlag = 0;
+
+                            runOnUiThread(() -> tv_devices.setText(builder));
+                        } catch (NotSupportedIPTypeException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                    lanDevicesScanner.start();
+                }
             }
         }
     }

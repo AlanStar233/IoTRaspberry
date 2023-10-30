@@ -1,4 +1,4 @@
-package com.alanstar.iotraspberry.utils;
+package com.alanstar.iotraspberry.exceptions;
 
 import androidx.annotation.NonNull;
 

@@ -39,6 +39,7 @@ android {
 
 dependencies {
 
+    implementation ("com.github.xuexiangjys:XUI:1.2.1")
     implementation("com.github.getActivity:Toaster:12.5")
     implementation("com.github.getActivity:XXPermissions:18.5")
     implementation("androidx.appcompat:appcompat:1.6.1")

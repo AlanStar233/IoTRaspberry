@@ -4,12 +4,18 @@ import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
 import android.util.Log;
 
+import com.alanstar.iotraspberry.exceptions.NotSupportedIPTypeException;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 扫描局域网下的设备
@@ -92,6 +98,8 @@ public class NetworkScanner {
 
         // 用带锁的队列使得多线程返回的结果按照顺序排列
         ConcurrentLinkedQueue<String> reachableDevices = new ConcurrentLinkedQueue<>();
+        // 创建一个线程池
+        ExecutorService threadsPool = Executors.newFixedThreadPool(65535);
         if (getIPType(ip).equals("A")) {
             // 提取 A 类: 125.20.0.100 -> 125.
             baseIPAddress = ip.substring(0, ip.indexOf(".")) + ".";
@@ -103,8 +111,19 @@ public class NetworkScanner {
 
                         // 多线程 ping
                         String finalTargetIPAddress = targetIPAddress;
-                        Thread multiPingThread = new Thread(multiPingRunnable(reachableDevices, finalTargetIPAddress));
-                        multiPingThread.start();
+                        threadsPool.execute(() -> multiPingRunnable(reachableDevices, finalTargetIPAddress));
+                    }
+
+                    // 关闭线程池并不再接受新任务
+                    threadsPool.shutdown();
+
+                    try {
+                        // 等待线程池中的任务执行完成
+                        if (!threadsPool.awaitTermination(1, TimeUnit.MINUTES)) {
+                            threadsPool.shutdownNow();
+                        }
+                    } catch (InterruptedException e) {
+                        Log.d(TAG, "线程池任务异常: ", e);
                     }
                 }
             }
@@ -119,8 +138,19 @@ public class NetworkScanner {
 
                     // 多线程 ping
                     String finalTargetIPAddress = targetIPAddress;
-                    Thread multiPingThread = new Thread(multiPingRunnable(reachableDevices, finalTargetIPAddress));
-                    multiPingThread.start();
+                    threadsPool.execute(() -> multiPingRunnable(reachableDevices, finalTargetIPAddress));
+                }
+
+                // 关闭线程池并不再接受新任务
+                threadsPool.shutdown();
+
+                try {
+                    // 等待线程池中的任务执行完成
+                    if (!threadsPool.awaitTermination(1, TimeUnit.MINUTES)) {
+                        threadsPool.shutdownNow();
+                    }
+                } catch (InterruptedException e) {
+                    Log.d(TAG, "线程池任务异常: ", e);
                 }
             }
         }
@@ -133,23 +163,40 @@ public class NetworkScanner {
 
                 // 多线程 ping
                 String finalTargetIPAddress = targetIPAddress;
-                Thread multiPingThread = new Thread(multiPingRunnable(reachableDevices, finalTargetIPAddress));
-                multiPingThread.start();
+                threadsPool.execute(() -> multiPingRunnable(reachableDevices, finalTargetIPAddress));
+            }
+
+            // 关闭线程池并不再接受新任务
+            threadsPool.shutdown();
+
+            try {
+                // 等待线程池中的任务执行完成
+                if (!threadsPool.awaitTermination(1, TimeUnit.MINUTES)) {
+                    threadsPool.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                Log.d(TAG, "线程池任务异常: ", e);
             }
         }
+
         else {
             throw new NotSupportedIPTypeException("不支持的IP类型");
         }
-        return new ArrayList<>(reachableDevices);
+
+        // 结果处理
+        Log.d(TAG, "对结果排序中...");
+        List<String> sortedResults = new ArrayList<>(reachableDevices);
+        Collections.sort(sortedResults);
+        return new ArrayList<>(sortedResults);
     }
 
     /**
      * 多线程 ping
-     * @param reachableDevices 带锁 list
+     *
+     * @param reachableDevices     带锁 list
      * @param finalTargetIPAddress for 拼接后的 IP 地址
-     * @return null
      */
-    Runnable multiPingRunnable(ConcurrentLinkedQueue<String> reachableDevices, String finalTargetIPAddress) {
+    void multiPingRunnable(ConcurrentLinkedQueue<String> reachableDevices, String finalTargetIPAddress) {
         try {
             // 构建 ping 命令 (只 ping 1 次)
             ProcessBuilder processBuilder = new ProcessBuilder("ping", "-c", "1", finalTargetIPAddress);
@@ -166,12 +213,15 @@ public class NetworkScanner {
 
             // 判断命令可达, 可达则加入列表
             if (exitCode == 0) {
+                Log.d(TAG, "IP: " +  finalTargetIPAddress + " 可达!");
                 reachableDevices.add(finalTargetIPAddress);
+            }
+            else {
+                Log.d(TAG, "IP: " + finalTargetIPAddress + " 不可达!");
             }
         } catch (IOException | InterruptedException e) {
             Log.d(TAG, "ping error: " + e.getMessage());
         }
-        return null;
     }
 
     /**
