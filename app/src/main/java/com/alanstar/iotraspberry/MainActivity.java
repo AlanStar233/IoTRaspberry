@@ -1,57 +1,92 @@
 package com.alanstar.iotraspberry;
 
+import static com.alanstar.iotraspberry.utils.GlobalValue.CONFIG_FILE_NAME;
 import static com.alanstar.iotraspberry.utils.GlobalValue.DOKIT_PROD_ID;
+import static com.alanstar.iotraspberry.utils.GlobalValue.MQTT_SERVER_DEFAULT_ADDRESS;
+import static com.alanstar.iotraspberry.utils.GlobalValue.PERMISSION_REQUEST_CODE;
 
 import android.Manifest;
-import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.net.wifi.WifiManager;
-import android.os.Build;
+import android.graphics.Color;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
+import android.widget.RadioGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.viewpager.widget.ViewPager;
 
-import com.alanstar.iotraspberry.exceptions.NotSupportedIPTypeException;
-import com.alanstar.iotraspberry.utils.NetworkScanner;
+import com.alanstar.iotraspberry.fragments.ConnectionFragment;
+import com.alanstar.iotraspberry.fragments.HomeFragment;
+import com.alanstar.iotraspberry.fragments.SettingsFragment;
+import com.alanstar.iotraspberry.fragments.SubscribeFragment;
+import com.alanstar.iotraspberry.utils.MyFragmentPagerAdapter;
+import com.alanstar.iotraspberry.utils.TopBarController;
 import com.didichuxing.doraemonkit.DoKit;
 import com.hjq.permissions.OnPermissionCallback;
 import com.hjq.permissions.Permission;
 import com.hjq.permissions.XXPermissions;
+import com.qmuiteam.qmui.widget.QMUITopBar;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnPermissionCallback {
+public class MainActivity extends AppCompatActivity implements RadioGroup.OnCheckedChangeListener, ViewPager.OnPageChangeListener, OnPermissionCallback {
 
-    Button btn_request;
-    TextView tv_devices;
+    // 组件引入 & 变量定义
+    private ViewPager mViewPager;
+    public ArrayList<Fragment> fragmentList;
+    private RadioGroup bottomBarGroup;
 
-    int clickFlag = 0;
+    // Light: Fragments 引入
+    public HomeFragment homeFragment;   // 主页
+    public ConnectionFragment connectionFragment;   // 扫描
+    public SubscribeFragment subscribeFragment;   // 订阅
+    public SettingsFragment settingsFragment;   // 设置
+
+    // Light: 初始化一个 TopBarController
+    public TopBarController topBarController = new TopBarController();
+    // Light: 初始化一个公共变量 mTopBarStatement
+    public int mTopBarStatement;
+
+    // TAG
     public static final String TAG = "MainActivity";
-    public static final int PERMISSION_REQUEST_CODE = 101;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 初始化
+        // 组件注册
         initComponents();
 
+        // 注册 ViewPager
+        initViewPager();
+
+        // config 初始化
+        initConfigFile();
+
+        // RadioGroup 监听
+        bottomBarGroup.setOnCheckedChangeListener(this);
+
+        // 权限校验
         if (!checkPermission()) {
             Toast.makeText(this, "权限缺失", Toast.LENGTH_SHORT).show();
         }
-        
+
         // 权限确认与申请
         XXPermissions.with(this)
                 .permission(Permission.ACCESS_FINE_LOCATION)
@@ -62,17 +97,118 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         new DoKit.Builder(this.getApplication())
                 .productId(DOKIT_PROD_ID)
                 .build();
-
-        // 监听事件
-        btn_request.setOnClickListener(this);
     }
 
-    /**
-     * 注册组件
-     */
+    // Light: 沉浸式工具栏
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+        getWindow().setStatusBarColor(Color.parseColor("#00AEEC"));
+    }
+
+    @Override
+    public void onPointerCaptureChanged(boolean hasCapture) {
+        super.onPointerCaptureChanged(hasCapture);
+    }
+
+    // 组件注册
     private void initComponents() {
-        btn_request = findViewById(R.id.btn_request);
-        tv_devices = findViewById(R.id.tv_devices);
+        mViewPager = findViewById(R.id.mViewPager);
+        bottomBarGroup = findViewById(R.id.bottomBarRadioGroup);
+    }
+
+    // ViewPager 初始化
+    private void initViewPager() {
+        // Light: 注册 Fragments
+        homeFragment = new HomeFragment();
+        connectionFragment = new ConnectionFragment();
+        subscribeFragment = new SubscribeFragment();
+        settingsFragment = new SettingsFragment();
+
+        // Light: 在 ArrayList 中加入新增的 Fragments
+        fragmentList = new ArrayList<>();
+        fragmentList.add(0, homeFragment);
+        fragmentList.add(1, connectionFragment);
+        fragmentList.add(2, subscribeFragment);
+        fragmentList.add(3, settingsFragment);
+
+        // set Adapter
+        mViewPager.setAdapter(new MyFragmentPagerAdapter(getSupportFragmentManager(), fragmentList));
+        // ViewPager 初始化指向
+        mViewPager.setCurrentItem(0);
+        // 页面切换监听
+        mViewPager.addOnPageChangeListener(this);
+    }
+
+    // Light: Settings 配置文件检测
+    public void initConfigFile() {
+        File config = new File(getFilesDir(), CONFIG_FILE_NAME);
+        if (!config.exists()) {
+            try {
+                Toast.makeText(this, "配置文件不存在，正在创建...", Toast.LENGTH_SHORT).show();
+                File configFile = new File(getFilesDir(), CONFIG_FILE_NAME);
+                // 对配置文件写入配置
+                JSONObject configJson = new JSONObject();
+                configJson.put("MQTTServerAddress", MQTT_SERVER_DEFAULT_ADDRESS);
+
+                // 配置写入文件
+                FileWriter configWriter = new FileWriter(configFile);
+                configWriter.write(configJson.toString());
+                configWriter.close();
+            } catch (IOException | JSONException e) {
+                Log.e(TAG, "initConfigFile Error: ", e);
+            }
+        }
+    }
+
+    // 底部 Navi 切换逻辑
+    @Override
+    public void onCheckedChanged(RadioGroup group, int checkedId) {
+
+        // Light: 获取当前 Fragment
+        int index = mViewPager.getCurrentItem();
+        Fragment fragment = (Fragment) Objects.requireNonNull(mViewPager.getAdapter()).instantiateItem(mViewPager, index);
+        QMUITopBar fragmentTopBar = fragment.requireView().findViewById(R.id.mTopBar);
+
+        // 切换
+        if (checkedId == R.id.radioHome) {
+            mViewPager.setCurrentItem(0, true);
+        } else if (checkedId == R.id.radioConnection) {
+            mViewPager.setCurrentItem(1, true);
+        } else if (checkedId == R.id.radioSubscribe) {
+            mViewPager.setCurrentItem(2, true);
+        } else if (checkedId == R.id.radioSettings) {
+            mViewPager.setCurrentItem(3, true);
+        }
+    }
+
+    @Override
+    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+    }
+
+    @Override
+    public void onPageSelected(int position) {
+        switch (position) {
+            case 0:
+                bottomBarGroup.check(R.id.radioHome);
+                break;
+            case 1:
+                bottomBarGroup.check(R.id.radioConnection);
+                break;
+            case 2:
+                bottomBarGroup.check(R.id.radioSubscribe);
+                break;
+            case 3:
+                bottomBarGroup.check(R.id.radioSettings);
+                break;
+        }
+    }
+
+    @Override
+    public void onPageScrollStateChanged(int state) {
+
     }
 
     /**
@@ -96,93 +232,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(this, "已有权限", Toast.LENGTH_SHORT).show();
-            }
-            else {
+            } else {
                 Toast.makeText(this, "未申请到权限", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    /**
-     * 打开 WLAN
-     */
-    @RequiresApi(api = Build.VERSION_CODES.Q)
-    private void enableWLAN() {
-        WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-        if (!wifiManager.isWifiEnabled()) {
-            Toast.makeText(this, "WLAN 未启动!", Toast.LENGTH_SHORT).show();
-            // 通过 popup 启动 Settings Panel
-            Intent panelIntent = new Intent(Settings.Panel.ACTION_WIFI);
-            startActivity(panelIntent);
-        }
-    }
-
-    /**
-     * 获取 WLAN 状态
-     * @return WLAN 状态 (启用 true  禁用 false)
-     */
-    private boolean getWLANStatus() {
-        WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-        return wifiManager.isWifiEnabled();
-    }
-
-    /**
-     * 按钮监听
-     * @param view The view that was clicked.
-     */
-    @Override
-    public void onClick(View view) {
-        if (view.getId() == R.id.btn_request) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                enableWLAN();
-            }
-            // 如果没权限则申请权限
-            Log.d(TAG, "Permission: " + getWLANStatus());
-            if (!getWLANStatus()) {
-                XXPermissions.with(this)
-                        .permission(Permission.ACCESS_FINE_LOCATION)
-                        .permission(Permission.ACCESS_COARSE_LOCATION)
-                        .request(this);
-            }
-            // 有权限则尝试获取列表
-            else {
-                if (clickFlag != 1) {
-                    Thread lanInfoGetter = new Thread(() -> {
-                        // 用 Runnable 在新线程上执行 net IO 操作
-                        WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-                        NetworkScanner scanner = new NetworkScanner(wifiManager);
-                        String builder = "IP 地址: " + scanner.getIpAddress() + "\n" +
-                                "子网掩码: " + scanner.getNetMask() + "\n" +
-                                "网关地址: " + scanner.getGateway() + "\n" +
-                                "服务器地址: " + scanner.getServerAddress() + "\n" +
-                                "首选 DNS 地址: " + scanner.getFirstDNS() + "\n" +
-                                "备用 DNS 地址: " + scanner.getSecondDNS() + "\n";
-                        Log.d(TAG, builder);
-
-                        clickFlag = 1;
-
-                        // 填充到 TextView (转到 UI 线程)
-                        runOnUiThread(() -> tv_devices.setText(builder));
-                    });
-                    lanInfoGetter.start();
-                }
-                else {
-                    Thread lanDevicesScanner = new Thread(() -> {
-                        WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-                        NetworkScanner scanner = new NetworkScanner(wifiManager);
-                        try {
-                            runOnUiThread(() -> Toast.makeText(getApplicationContext(), "正在扫描网络中...", Toast.LENGTH_SHORT).show());
-                            String builder = "可用 IP 地址: " + scanner.scanLANReachable(scanner.getIpAddress());
-                            Log.d(TAG, builder);
-                            clickFlag = 0;
-
-                            runOnUiThread(() -> tv_devices.setText(builder));
-                        } catch (NotSupportedIPTypeException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-                    lanDevicesScanner.start();
-                }
             }
         }
     }

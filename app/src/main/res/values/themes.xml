@@ -1,9 +1,24 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.IoTRaspberry" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+<resources>
+    <style name="Theme.IoTArduino" parent="QMUI.Compat.NoActionBar">
+        <item name="QMUITopBarStyle">@style/myTopBar</item>
+        <item name="colorPrimary">@color/BilibiliBlue</item>
+        <!-- Splash 首页启动样式 -->
+        <item name="android:windowBackground">@drawable/splash_screen</item>
     </style>
 
-    <style name="Theme.IoTRaspberry" parent="Base.Theme.IoTRaspberry" />
+    <!-- TopBar 样式 -->
+    <style name="myTopBar" parent="QMUI.TopBar">
+        <item name="qmui_topbar_title_color">#66CCFF</item>
+    </style>
+
+    <!-- BottomBar 样式 -->
+    <!-- RadioGroup 指向 @drawable/bottombar_xxx -->
+    <style name="bottomBarNoBtn">
+        <item name="android:button">@null</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:textColor">@color/qmui_config_color_gray_4</item>
+        <item name="android:textAlignment">center</item>
+        <item name="android:layout_height">60dp</item>
+    </style>
+
 </resources>

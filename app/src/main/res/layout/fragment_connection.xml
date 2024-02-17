@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".MainActivity">
+
+    <!-- TopBar -->
+    <com.qmuiteam.qmui.widget.QMUITopBar
+        android:id="@+id/mTopBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/TianyiBlue"
+        app:qmui_topbar_title_color="@color/white"
+        app:qmui_topbar_image_btn_width="40dp"
+        app:qmui_topbar_image_btn_height="40dp"
+        android:fitsSystemWindows="true" />
+
+    <!-- 主视觉区 -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="?attr/qmui_topbar_height"
+        android:background="@color/qmui_config_color_white">
+
+        <!-- 扫描大盘 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_conn_devices"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:text="结果" />
+
+                <Button
+                    android:id="@+id/btn_conn_request"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="请求" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</FrameLayout>

@@ -1,22 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/btn_request"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="请求" />
+<!--    <Button-->
+<!--        android:id="@+id/btn_request"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="请求" />-->
 
-    <TextView
-        android:id="@+id/tv_devices"
+<!--    <TextView-->
+<!--        android:id="@+id/tv_devices"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="300dp"-->
+<!--        android:text="result" />-->
+
+    <!-- 中间 Fragment -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:text="result"/>
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/bottomBar"
+        android:orientation="vertical">
 
-</LinearLayout>
+        <com.qmuiteam.qmui.widget.QMUIViewPager
+            android:id="@+id/mViewPager"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:ignore="SpeakableTextPresentCheck" />
+
+    </LinearLayout>
+
+    <!-- 底部导航 -->
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:gravity="center_horizontal">
+
+        <include layout="@layout/bottom_bar" />
+
+    </LinearLayout>
+
+</RelativeLayout>

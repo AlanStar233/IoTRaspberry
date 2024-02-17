@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/bottomBar"
+    android:layout_width="match_parent"
+    android:layout_height="60dp"
+    android:paddingTop="0dp"
+    android:paddingBottom="0dp"
+    android:background="@color/BilibiliBlue"
+    android:gravity="center_horizontal"
+    android:orientation="horizontal">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        tools:ignore="UselessParent">
+
+        <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="1dp"
+            android:background="@color/qmui_config_color_10_pure_black" />
+
+        <RadioGroup
+            android:id="@+id/bottomBarRadioGroup"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radioHome"
+                style="@style/bottomBarNoBtn"
+                android:checked="true"
+                android:drawableTop="@drawable/bottombar_home"
+                android:text="@string/radioHome"
+                tools:ignore="TextContrastCheck,VisualLintButtonSize,VisualLintBounds" />
+
+            <RadioButton
+                android:id="@+id/radioConnection"
+                style="@style/bottomBarNoBtn"
+                android:drawableTop="@drawable/bottombar_connection"
+                android:text="@string/radioConnection"
+                tools:ignore="TextContrastCheck,VisualLintButtonSize,VisualLintBounds" />
+
+            <RadioButton
+                android:id="@+id/radioSubscribe"
+                style="@style/bottomBarNoBtn"
+                android:drawableTop="@drawable/bottombar_info"
+                android:text="@string/radioSubscribe"
+                tools:ignore="TextContrastCheck,VisualLintBounds,VisualLintButtonSize" />
+
+            <RadioButton
+                android:id="@+id/radioSettings"
+                style="@style/bottomBarNoBtn"
+                android:drawableTop="@drawable/bottombar_settings"
+                android:text="@string/radioSettings"
+                tools:ignore="TextContrastCheck,VisualLintBounds,VisualLintButtonSize" />
+
+        </RadioGroup>
+
+    </LinearLayout>
+
+</LinearLayout>

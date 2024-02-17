@@ -100,72 +100,55 @@ public class NetworkScanner {
         ConcurrentLinkedQueue<String> reachableDevices = new ConcurrentLinkedQueue<>();
         // 创建一个线程池
         ExecutorService threadsPool = Executors.newFixedThreadPool(65535);
-        if (getIPType(ip).equals("A")) {
-            // 提取 A 类: 125.20.0.100 -> 125.
-            baseIPAddress = ip.substring(0, ip.indexOf(".")) + ".";
-            for (int i = 1; i <=254; i++) {
-                for (int j = 1; j <=254; j++) {
-                    for (int k = 1; k <= 254; k++) {
+
+        try {
+            if (getIPType(ip).equals("A")) {
+                // 提取 A 类: 125.20.0.100 -> 125.
+                baseIPAddress = ip.substring(0, ip.indexOf(".")) + ".";
+                for (int i = 1; i <=254; i++) {
+                    for (int j = 1; j <=254; j++) {
+                        for (int k = 1; k <= 254; k++) {
+                            // 拼接
+                            targetIPAddress = baseIPAddress + i + "." + j + "." + k;
+
+                            // 多线程 ping
+                            String finalTargetIPAddress = targetIPAddress;
+                            threadsPool.execute(() -> multiPingRunnable(reachableDevices, finalTargetIPAddress));
+                        }
+                    }
+                }
+            }
+            else if (getIPType(ip).equals("B")) {
+                // 提取 B 类: 172.20.0.100 -> 172.20.
+                baseIPAddress = ip.substring(0, ip.indexOf(".", ip.indexOf(".") + 1)) + ".";
+                for (int i = 1; i <= 254; i++) {
+                    for (int j = 1; j <= 254; j++) {
                         // 拼接
-                        targetIPAddress = baseIPAddress + i + "." + j + "." + k;
+                        targetIPAddress = baseIPAddress + i + "." + j;
 
                         // 多线程 ping
                         String finalTargetIPAddress = targetIPAddress;
                         threadsPool.execute(() -> multiPingRunnable(reachableDevices, finalTargetIPAddress));
                     }
-
-                    // 关闭线程池并不再接受新任务
-                    threadsPool.shutdown();
-
-                    try {
-                        // 等待线程池中的任务执行完成
-                        if (!threadsPool.awaitTermination(1, TimeUnit.MINUTES)) {
-                            threadsPool.shutdownNow();
-                        }
-                    } catch (InterruptedException e) {
-                        Log.d(TAG, "线程池任务异常: ", e);
-                    }
                 }
             }
-        }
-        else if (getIPType(ip).equals("B")) {
-            // 提取 B 类: 172.20.0.100 -> 172.20.
-            baseIPAddress = ip.substring(0, ip.indexOf(".", ip.indexOf(".") + 1)) + ".";
-            for (int i = 1; i <= 254; i++) {
-                for (int j = 1; j <= 254; j++) {
+            else if (getIPType(ip).equals("C")) {
+                // 提取 C 类: 192.168.31.100 -> 192.168.31.
+                baseIPAddress = ip.substring(0, ip.lastIndexOf(".") + 1);
+                for (int i = 1; i <= 254; i++) {
                     // 拼接
-                    targetIPAddress = baseIPAddress + i + "." + j;
+                    targetIPAddress = baseIPAddress + i;
 
                     // 多线程 ping
                     String finalTargetIPAddress = targetIPAddress;
                     threadsPool.execute(() -> multiPingRunnable(reachableDevices, finalTargetIPAddress));
                 }
-
-                // 关闭线程池并不再接受新任务
-                threadsPool.shutdown();
-
-                try {
-                    // 等待线程池中的任务执行完成
-                    if (!threadsPool.awaitTermination(1, TimeUnit.MINUTES)) {
-                        threadsPool.shutdownNow();
-                    }
-                } catch (InterruptedException e) {
-                    Log.d(TAG, "线程池任务异常: ", e);
-                }
+            }
+            else {
+                throw new NotSupportedIPTypeException("不支持的IP类型");
             }
         }
-        else if (getIPType(ip).equals("C")) {
-            // 提取 C 类: 192.168.31.100 -> 192.168.31.
-            baseIPAddress = ip.substring(0, ip.lastIndexOf(".") + 1);
-            for (int i = 1; i <= 254; i++) {
-                // 拼接
-                targetIPAddress = baseIPAddress + i;
-
-                // 多线程 ping
-                String finalTargetIPAddress = targetIPAddress;
-                threadsPool.execute(() -> multiPingRunnable(reachableDevices, finalTargetIPAddress));
-            }
-
+        finally {
             // 关闭线程池并不再接受新任务
             threadsPool.shutdown();
 
@@ -177,10 +160,6 @@ public class NetworkScanner {
             } catch (InterruptedException e) {
                 Log.d(TAG, "线程池任务异常: ", e);
             }
-        }
-
-        else {
-            throw new NotSupportedIPTypeException("不支持的IP类型");
         }
 
         // 结果处理

@@ -46,6 +46,8 @@ dependencies {
     implementation("com.google.android.material:material:1.10.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("com.android.volley:volley:1.2.1")
+    implementation("com.qmuiteam:qmui:2.1.0")
+    implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
     debugImplementation("io.github.didi.dokit:dokitx:3.7.11")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
