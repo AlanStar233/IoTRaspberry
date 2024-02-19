@@ -34,16 +34,29 @@
                     android:id="@+id/tv_conn_devices"
                     android:layout_width="match_parent"
                     android:layout_height="200dp"
-                    android:text="结果" />
+                    android:text="@string/tv_conn_devices" />
 
                 <Button
                     android:id="@+id/btn_conn_request"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="请求" />
+                    android:text="@string/btn_conn_request"
+                    android:background="@color/TianyiBlue"
+                    android:foreground="?attr/selectableItemBackground" />
 
         </LinearLayout>
 
     </ScrollView>
+
+    <!-- Loading 组件 -->
+    <com.xuexiang.xui.widget.progress.loading.ARCLoadingView
+        android:id="@+id/loading_view"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_gravity="center"
+        android:visibility="invisible"
+        app:lv_color="@color/BilibiliBlue"
+        app:lv_icon="@mipmap/raspberry_icon"
+        app:lv_has_icon="true" />
 
 </FrameLayout>

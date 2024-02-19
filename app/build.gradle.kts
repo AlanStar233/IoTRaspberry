@@ -1,5 +1,6 @@
 plugins {
     id("com.android.application")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
@@ -32,8 +33,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 
@@ -48,6 +49,7 @@ dependencies {
     implementation("com.android.volley:volley:1.2.1")
     implementation("com.qmuiteam:qmui:2.1.0")
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
+    implementation("org.eclipse.paho:org.eclipse.paho.android.service:1.1.1")
     debugImplementation("io.github.didi.dokit:dokitx:3.7.11")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

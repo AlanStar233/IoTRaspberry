@@ -24,12 +24,25 @@
         android:layout_marginTop="?attr/qmui_topbar_height"
         android:background="@color/qmui_config_color_white">
 
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAlignment="center"
-            android:textSize="20sp"
-            android:text="订阅" />
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:textSize="20sp"
+                android:text="订阅" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_subscribe_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp" />
+
+        </LinearLayout>
 
     </ScrollView>
 

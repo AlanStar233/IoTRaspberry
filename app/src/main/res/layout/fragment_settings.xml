@@ -24,12 +24,51 @@
         android:layout_marginTop="?attr/qmui_topbar_height"
         android:background="@color/qmui_config_color_white">
 
-        <TextView
+        <!-- 设置大盘 -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAlignment="center"
-            android:textSize="20sp"
-            android:text="设置" />
+            android:orientation="vertical">
+
+            <!-- Broker 地址 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                tools:ignore="UselessParent">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:gravity="start|center_vertical"
+                    android:layout_weight="1"
+                    android:text="@string/broker_address_text"
+                    android:textSize="18sp" />
+
+                <EditText
+                    android:id="@+id/et_broker_address"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="3"
+                    android:textSize="20sp"
+                    android:inputType="text"
+                    tools:ignore="Autofill,LabelFor" />
+
+            </LinearLayout>
+
+            <!-- 下个设置点 -->
+
+            <!-- 更新按钮 -->
+            <Button
+                android:id="@+id/btn_SettingsUpdate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_update"
+                android:textSize="20sp"
+                android:background="@color/TianyiBlue"
+                android:foreground="?attr/selectableItemBackground" />
+
+        </LinearLayout>
 
     </ScrollView>
 

@@ -2,7 +2,7 @@ package com.alanstar.iotraspberry;
 
 import static com.alanstar.iotraspberry.utils.GlobalValue.CONFIG_FILE_NAME;
 import static com.alanstar.iotraspberry.utils.GlobalValue.DOKIT_PROD_ID;
-import static com.alanstar.iotraspberry.utils.GlobalValue.MQTT_SERVER_DEFAULT_ADDRESS;
+import static com.alanstar.iotraspberry.utils.GlobalValue.MQTT_SERVER_ADDRESS;
 import static com.alanstar.iotraspberry.utils.GlobalValue.PERMISSION_REQUEST_CODE;
 
 import android.Manifest;
@@ -12,7 +12,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.RadioGroup;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -26,12 +25,14 @@ import com.alanstar.iotraspberry.fragments.HomeFragment;
 import com.alanstar.iotraspberry.fragments.SettingsFragment;
 import com.alanstar.iotraspberry.fragments.SubscribeFragment;
 import com.alanstar.iotraspberry.utils.MyFragmentPagerAdapter;
+import com.alanstar.iotraspberry.utils.OverToast;
 import com.alanstar.iotraspberry.utils.TopBarController;
 import com.didichuxing.doraemonkit.DoKit;
 import com.hjq.permissions.OnPermissionCallback;
 import com.hjq.permissions.Permission;
 import com.hjq.permissions.XXPermissions;
 import com.qmuiteam.qmui.widget.QMUITopBar;
+import com.xuexiang.xui.widget.toast.XToast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -84,7 +85,7 @@ public class MainActivity extends AppCompatActivity implements RadioGroup.OnChec
 
         // 权限校验
         if (!checkPermission()) {
-            Toast.makeText(this, "权限缺失", Toast.LENGTH_SHORT).show();
+            OverToast.error(this, "权限缺失", 0, 300).show();
         }
 
         // 权限确认与申请
@@ -146,11 +147,11 @@ public class MainActivity extends AppCompatActivity implements RadioGroup.OnChec
         File config = new File(getFilesDir(), CONFIG_FILE_NAME);
         if (!config.exists()) {
             try {
-                Toast.makeText(this, "配置文件不存在，正在创建...", Toast.LENGTH_SHORT).show();
+                OverToast.info(this, "配置文件不存在，正在创建...", 0, 300).show();
                 File configFile = new File(getFilesDir(), CONFIG_FILE_NAME);
-                // 对配置文件写入配置
+                // Light: 对配置文件写入配置
                 JSONObject configJson = new JSONObject();
-                configJson.put("MQTTServerAddress", MQTT_SERVER_DEFAULT_ADDRESS);
+                configJson.put("MQTT_SERVER_ADDRESS", MQTT_SERVER_ADDRESS);
 
                 // 配置写入文件
                 FileWriter configWriter = new FileWriter(configFile);
@@ -191,18 +192,10 @@ public class MainActivity extends AppCompatActivity implements RadioGroup.OnChec
     @Override
     public void onPageSelected(int position) {
         switch (position) {
-            case 0:
-                bottomBarGroup.check(R.id.radioHome);
-                break;
-            case 1:
-                bottomBarGroup.check(R.id.radioConnection);
-                break;
-            case 2:
-                bottomBarGroup.check(R.id.radioSubscribe);
-                break;
-            case 3:
-                bottomBarGroup.check(R.id.radioSettings);
-                break;
+            case 0 -> bottomBarGroup.check(R.id.radioHome);
+            case 1 -> bottomBarGroup.check(R.id.radioConnection);
+            case 2 -> bottomBarGroup.check(R.id.radioSubscribe);
+            case 3 -> bottomBarGroup.check(R.id.radioSettings);
         }
     }
 
@@ -231,9 +224,9 @@ public class MainActivity extends AppCompatActivity implements RadioGroup.OnChec
         // 检查权限
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "已有权限", Toast.LENGTH_SHORT).show();
+                OverToast.success(this, "已有权限", 0, 300).show();
             } else {
-                Toast.makeText(this, "未申请到权限", Toast.LENGTH_SHORT).show();
+                OverToast.error(this, "未申请到权限", 0, 300).show();
             }
         }
     }
@@ -246,10 +239,10 @@ public class MainActivity extends AppCompatActivity implements RadioGroup.OnChec
     @Override
     public void onGranted(@NonNull List<String> permissions, boolean allGranted) {
         if (!allGranted) {
-            Toast.makeText(this, "存在部分权限未授予", Toast.LENGTH_SHORT).show();
+            XToast.warning(this, "存在部分权限未授予").show();
             return;
         }
-        Toast.makeText(this, "权限获取成功", Toast.LENGTH_SHORT).show();
+        OverToast.success(this, "权限获取成功", 0, 300).show();
     }
 
     /**
@@ -260,10 +253,10 @@ public class MainActivity extends AppCompatActivity implements RadioGroup.OnChec
     @Override
     public void onDenied(@NonNull List<String> permissions, boolean doNotAskAgain) {
         if (doNotAskAgain) {
-            Toast.makeText(this, "权限申请被永久拒绝, 请手动授予", Toast.LENGTH_SHORT).show();
+            OverToast.error(this, "权限申请被永久拒绝, 请手动授予", 0, 300).show();
             // 被永久拒绝就跳到对应页面提示授权
             XXPermissions.startPermissionActivity(getApplicationContext(), permissions);
         }
-        Toast.makeText(this, "权限获取成功", Toast.LENGTH_SHORT).show();
+        OverToast.success(this, "权限获取成功", 0, 300).show();
     }
 }

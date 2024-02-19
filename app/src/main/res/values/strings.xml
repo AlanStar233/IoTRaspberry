@@ -6,4 +6,12 @@
     <string name="radioConnection">扫描</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="tv_conn_devices">结果</string>
+    <string name="btn_conn_request">请求</string>
+    <string name="broker_address_text">Broker 地址</string>
+    <string name="settings_update">更新</string>
+    <string name="tv_broker_default">mqtt://broker.biliforum.cn:1883</string>
+    <string name="tv_topic_default">Topic</string>
+    <string name="iv_avatar_content">avatar</string>
+    <string name="tv_protocol_default">MQTT</string>
 </resources>

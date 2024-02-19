@@ -12,7 +12,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,11 +21,13 @@ import androidx.fragment.app.Fragment;
 import com.alanstar.iotraspberry.R;
 import com.alanstar.iotraspberry.exceptions.NotSupportedIPTypeException;
 import com.alanstar.iotraspberry.utils.NetworkScanner;
+import com.alanstar.iotraspberry.utils.OverToast;
 import com.alanstar.iotraspberry.utils.TopBarController;
 import com.hjq.permissions.OnPermissionCallback;
 import com.hjq.permissions.Permission;
 import com.hjq.permissions.XXPermissions;
 import com.qmuiteam.qmui.widget.QMUITopBar;
+import com.xuexiang.xui.widget.progress.loading.ARCLoadingView;
 
 import java.util.List;
 
@@ -37,8 +38,10 @@ public class ConnectionFragment extends Fragment implements View.OnClickListener
 
     TextView tv_conn_devices;
     Button btn_conn_request;
+    ARCLoadingView loading_view;
 
     // 创建变量
+    String tv_conn_devicesText;
 
     // 创建常量
     public static final String TAG = "ConnectionFragment";
@@ -68,6 +71,7 @@ public class ConnectionFragment extends Fragment implements View.OnClickListener
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
     }
 
     // Light: 注册组件
@@ -76,12 +80,22 @@ public class ConnectionFragment extends Fragment implements View.OnClickListener
 
         tv_conn_devices = view.findViewById(R.id.tv_conn_devices);
         btn_conn_request = view.findViewById(R.id.btn_conn_request);
+        loading_view = view.findViewById(R.id.loading_view);
     }
 
     // Light: Fragment 获得焦点
     @Override
     public void onResume() {
         super.onResume();
+
+        // 如果上次扫描中有存储结果, 则直接展示
+        if (!(tv_conn_devices.getText().toString().equals("结果")))
+        {
+            tv_conn_devices.setText(tv_conn_devicesText);
+        }
+        else {
+            tv_conn_devices.setText("结果");
+        }
 
         btn_conn_request.setOnClickListener(this);
     }
@@ -92,7 +106,12 @@ public class ConnectionFragment extends Fragment implements View.OnClickListener
         super.onPause();
 
         clickFlag = 0;      // 当 Fragment 失去焦点时, 重置 clickFlag 为默认值
-        Toast.makeText(requireContext().getApplicationContext(), "重置 clickFlag", Toast.LENGTH_SHORT).show();
+
+        // 记忆扫描结果
+        tv_conn_devicesText = tv_conn_devices.getText().toString();
+
+        // 断言, 如果在 debug 模式下则显示该 Toast
+        OverToast.info(requireContext().getApplicationContext(), "重置 clickFlag", 0, 300).show();
     }
 
     /**
@@ -102,7 +121,7 @@ public class ConnectionFragment extends Fragment implements View.OnClickListener
     private void enableWLAN() {
         WifiManager wifiManager = (WifiManager) requireContext().getSystemService(Context.WIFI_SERVICE);
         if (!wifiManager.isWifiEnabled()) {
-            Toast.makeText(requireContext().getApplicationContext(), "WLAN 未启动!", Toast.LENGTH_SHORT).show();
+            OverToast.warning(requireContext().getApplicationContext(), "WLAN 未启动!", 0, 300).show();
             // 通过 popup 方式启动 Settings Panel
             Intent panelIntent = new Intent(Settings.Panel.ACTION_WIFI);
             startActivity(panelIntent);
@@ -157,11 +176,13 @@ public class ConnectionFragment extends Fragment implements View.OnClickListener
                 }
                 else {
                     Thread lanDevicesScanner = new Thread(() ->{
+                        requireActivity().runOnUiThread(() -> loading_view.setVisibility(View.VISIBLE));    // 设置加载框可见
                         WifiManager wifiManager = (WifiManager) requireContext().getSystemService(Context.WIFI_SERVICE);
                         NetworkScanner scanner = new NetworkScanner(wifiManager);
                         try {
-                            requireActivity().runOnUiThread(() -> Toast.makeText(requireContext().getApplicationContext(), "正在扫描网络中...", Toast.LENGTH_SHORT).show());
+                            requireActivity().runOnUiThread(() -> OverToast.info(requireContext().getApplicationContext(), "正在扫描网络中...", 0, 300).show());
                             String builder = "可用 IP 地址: " + scanner.scanLANReachable(scanner.getIpAddress());
+                            requireActivity().runOnUiThread(() -> loading_view.setVisibility(View.GONE));   // 加载框不可见
                             Log.d(TAG, builder);
                             clickFlag = 0;
 
@@ -184,19 +205,19 @@ public class ConnectionFragment extends Fragment implements View.OnClickListener
     @Override
     public void onGranted(@NonNull List<String> permissions, boolean allGranted) {
         if (!allGranted) {
-            Toast.makeText(requireContext().getApplicationContext(), "存在部分权限未授予", Toast.LENGTH_SHORT).show();
+            OverToast.warning(requireContext().getApplicationContext(), "存在部分权限未授予", 0, 300).show();
             return;
         }
-        Toast.makeText(requireContext().getApplicationContext(), "权限获取成功", Toast.LENGTH_SHORT).show();
+        OverToast.success(requireContext().getApplicationContext(), "权限获取成功", 0, 300).show();
     }
 
     @Override
     public void onDenied(@NonNull List<String> permissions, boolean doNotAskAgain) {
         if (doNotAskAgain) {
-            Toast.makeText(requireContext().getApplicationContext(), "权限申请被永久拒绝, 请手动授予", Toast.LENGTH_SHORT).show();
+            OverToast.error(requireContext().getApplicationContext(), "权限申请被永久拒绝, 请手动授予", 0, 300).show();
             // 被永久拒绝就跳到对应页面提示授权
             XXPermissions.startPermissionActivity(requireContext().getApplicationContext(), permissions);
         }
-        Toast.makeText(requireContext().getApplicationContext(), "权限获取成功", Toast.LENGTH_SHORT).show();
+        OverToast.success(requireContext().getApplicationContext(), "权限获取成功", 0, 300).show();
     }
 }
